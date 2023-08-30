@@ -1,0 +1,69 @@
+{% extends 'default.html' %}
+
+{% block title %}
+Chat Rooms
+{% endblock title %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <br>
+        {% if user.profile.avatar %}
+            <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="logo-image"
+                style="float: left; width: 50px; height: 50px; border-radius: 15px;">
+        {% endif %}
+        What chat room would you like to create?<br>
+        <input id="room-name-input" type="text" size="100"><br>
+        <input id="room-name-submit" type="button" value="Create Room">
+        <p>***</p>
+        <p>Or enter a Room:</p>
+        <div id="rooms-list">no room</div>
+
+        {{ rooms|json_script:"rooms" }}
+        <script>
+            document.querySelector('#room-name-input').focus();
+            document.querySelector('#room-name-input').onkeyup = function(e) {
+                if (e.key === 'Enter') {  // enter, return
+                    document.querySelector('#room-name-submit').click();
+                }
+            };
+
+            document.querySelector('#room-name-submit').onclick = function(e) {
+                var roomName = document.querySelector('#room-name-input').value;
+                if (/^[a-z0-9\s]+$/i.test(roomName)) {
+                        window.location.pathname = '/chat_app/' + roomName + '/';
+                    } else { alert('Wrong Room name! Latin letters, numbers and spaces only'); }
+                };
+
+            function roomsList(rooms) {
+                if (rooms.length != 0) {
+                    roomsOpened = '';
+                    for (let r of rooms) {
+                        console.log(r)
+                        roomsOpened += `<p><a href="/chat_app/` + r + `/">` + r + `</a></p>`;
+                    }
+                        console.log(roomsOpened)
+                } else {
+                    roomsOpened = `No rooms opened yet. Create yours!`
+                };
+                document.getElementById("rooms-list").innerHTML = roomsOpened;
+            }
+
+                async function roomsLoader(callback) {
+                    const roomsUpload = await fetch('./roomsupdate/')
+                            .then(response => response.json());
+                    callback(roomsUpload);
+                };
+
+                rooms = JSON.parse(document.getElementById('rooms').textContent);
+                roomsList(rooms);
+                setTimeout(roomsLoader, 1000, roomsList);
+                setInterval(roomsLoader, 30000, roomsList);
+        </script>
+    {% else %}
+        <h2>Log in or Sign up</h2>
+        <hr>
+        <a class="nav-link" href="/accounts/login/">Log in</a>
+        <br>
+        <a class="nav-link" href="/accounts/signup/">Sign up</a>
+    {% endif %}
+{% endblock content %}
